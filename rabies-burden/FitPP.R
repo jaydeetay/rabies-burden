@@ -23,7 +23,7 @@ incidence <- within(incidence, {
   uprop <- untreat/tot
 })
 
-# Fit random effects mobel to assess whether HDI predicts the probability of receiving PEP (PP)
+# Fit random effects model to assess whether HDI predicts the probability of receiving PEP (PP)
 yd <- na.omit(incidence[,c("ctry", "tprop", "HDI", "tot")])
 tMod <- glmer(tprop ~ HDI + (1|ctry), family=binomial, weight=tot, data=yd)
 print(summary(tMod))

@@ -81,7 +81,7 @@ GBD2010 <- read.csv("GBD2010_LE.csv")  # GBD 2010 study - LE of 86 years at birt
 west26 <- read.csv("West26.csv")  # Standard West 26 lifetable # Coale-Demeny Model Life Tables West (26) - Life Expectancy at Birth = 80∙0 for males & 82∙5 for females
 print("read tables")
 
-#d<-read.csv("pPEPcountry.csv")
+d<-read.csv("pPEPcountry.csv")
 
 ########################################################################
 # DEATHS, EXPOSURES & PEP ADMINISTRATION - basis for sensitivity analyses
