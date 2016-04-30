@@ -1,6 +1,5 @@
 #
-# This is the user-interface definition of a Shiny web application. You can
-# run the application by clicking 'Run App' above.
+# Shiny User interface to the rabies burden model.
 #
 # Find out more about building applications with Shiny here:
 # 
@@ -9,25 +8,23 @@
 
 library(shiny)
 
-# Define UI for application that draws a histogram
+# User interface
 shinyUI(fluidPage(
   
   # Application title
-  titlePanel("Old Faithful Geyser Data"),
+  titlePanel("Burden of Rabies"),
   
   # Sidebar with a slider input for number of bins 
   sidebarLayout(
     sidebarPanel(
-       sliderInput("bins",
-                   "Number of bins:",
-                   min = 1,
-                   max = 50,
-                   value = 30)
+       h1("Controls will go here"),
+       actionButton("start", "Start Calculation")
     ),
     
     # Show a plot of the generated distribution
     mainPanel(
-       plotOutput("distPlot")
+       h2("Results will go here"),
+       textOutput("status")
     )
   )
 ))
