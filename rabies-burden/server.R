@@ -12,9 +12,10 @@ source('load_countries.R')
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
-  print("Input changed")
+  print("New User")
   output$countrySelector<-renderUI({selectInput("countryChoice", "Country", rownames(country_data))})
   output$country<-renderText({
+    print("Country changed")
     as.character(country_data[input$countryChoice, "Country"])})
   
   output$continent<-renderText({
@@ -27,14 +28,20 @@ shinyServer(function(input, output) {
     as.character(country_data[input$countryChoice, "Human_population_2010"])})
   
 
-  output$status<-renderText({paste("Running run number ", input$start)})
+  # Running the rabies model is expensive - we don't want to redo it automatically
+  # on every input change.  Instead only run it when the button is pressed.
+  doCalculation <- eventReactive(input$start,{
+    print("Sourcing burden_model")
+    source('burden_model.R')
+  })
   
-  # Do stuff
-  #print("Sourcing model")
-  #source('burden_model.R')
+  output$dummy <- renderText(withProgress(message="Calculating", {
+    print("Do calculation")
+    doCalculation()
+    ""
+  }))
   
-  output$status<-renderText({"Not started"})
   
   
-  print("Done")
+  print("End server call")
 })

@@ -19,7 +19,8 @@ shinyUI(fluidPage(
     sidebarPanel(
        h1("Select:"),
        uiOutput("countrySelector"),  # Set dynamically
-       actionButton("start", "Start Calculation")
+       actionButton("start", "Calculate"), br(),
+       textOutput("dummy")
     ),
     
     # Show a plot of the generated distribution
@@ -29,9 +30,8 @@ shinyUI(fluidPage(
        "Country: ", textOutput("country", inline=TRUE),br(),
        "Continent: ", textOutput("continent", inline=TRUE),br(),
        "Cluster: ", textOutput("cluster", inline=TRUE),br(),
-       "Population (2010): ", textOutput("population", inline=TRUE),
-       h3("Calculation status"),
-       textOutput("status")
+       "Population (2010): ", textOutput("population", inline=TRUE)
+       
     )
   )
 ))

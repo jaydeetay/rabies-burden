@@ -163,3 +163,5 @@ total_costs = sum(country_costs)
 
 write.csv(d, "burden.csv", row.names=FALSE)
 
+print("burden_model complete")
+
