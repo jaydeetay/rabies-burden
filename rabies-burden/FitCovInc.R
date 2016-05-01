@@ -12,7 +12,7 @@ library(bbmle)
 
 # produces 
   # LAC_params.csv; livestock_params.csv
-  # RPcluster.csv; RPcountry.csv
+  # RPcluster.csv; RPcountry.csv <-- not true, but vars are created.
 
 require("Hmisc")  # Added by johntaylor
 

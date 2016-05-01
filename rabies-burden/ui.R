@@ -17,13 +17,20 @@ shinyUI(fluidPage(
   # Sidebar with a slider input for number of bins 
   sidebarLayout(
     sidebarPanel(
-       h1("Controls will go here"),
+       h1("Select:"),
+       uiOutput("countrySelector"),  # Set dynamically
        actionButton("start", "Start Calculation")
     ),
     
     # Show a plot of the generated distribution
     mainPanel(
-       h2("Results will go here"),
+       h2("Output:"),
+       h3("Country Data"),
+       "Country: ", textOutput("country", inline=TRUE),br(),
+       "Continent: ", textOutput("continent", inline=TRUE),br(),
+       "Cluster: ", textOutput("cluster", inline=TRUE),br(),
+       "Population (2010): ", textOutput("population", inline=TRUE),
+       h3("Calculation status"),
        textOutput("status")
     )
   )

@@ -15,7 +15,8 @@
 # http://www.who.int/healthinfo/global_burden_disease/daly_disability_weight/en/
 # Note GBD2010 uses prevalence rather than incidence (equivalent for rabies)
 
-source("burden_1.R")
+# Temporarily disable running burden_1 and rely on the previously calculated pPEPcountry.csv
+#source("burden_1.R")
 require("Hmisc")
 require("VGAM")
 library(LifeTable)
