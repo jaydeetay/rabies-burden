@@ -21,6 +21,14 @@ require("Hmisc")
 require("VGAM")
 library(LifeTable)
 
+pop <- read.csv("CountriesPop.csv")  # http://esa.un.org/wpp (country-specific mortality rates, % urban etc)
+# DALYs - disability weightings and lifetables
+DALYrabies <- read.csv("DALY_params_rabies.csv")  # Probability of rabies death at each age class
+DALYvacc <- read.csv("DALY_params_vaccination.csv")
+GBD2010 <- read.csv("GBD2010_LE.csv")  # GBD 2010 study - LE of 86 years at birth (based on highest observed LE per age group)
+west26 <- read.csv("West26.csv")  # Standard West 26 lifetable # Coale-Demeny Model Life Tables West (26) - Life Expectancy at Birth = 80∙0 for males & 82∙5 for females
+print("burden_model: read all tables")
+
 YLLcalc <- function(LTvar, LTvalues, cause, interval=c(1, 4, rep(5,19)), 
                     discount = 0.03, C = 0.1658, Beta = 0.04, alpha = 1){    
   # Calculates YLL (age-weighted and discounted) from rabies or Adverse Events (AE) from Nerve Tissue Vaccines (NTVs)
@@ -64,8 +72,10 @@ YLDcalc <- function(duration, disability_weight, probability){
   return(duration * disability_weight * probability)
 }
 
-# Will return data for all countries unless a countryCode is given.
-calculate_burden <- function(countryCode = NULL, provideProgress=FALSE) {
+# Will return data for all countries in the pPEP data unless a countryCode is given.
+# Alternately, provide your own overridden customPPEPdata instead.
+calculate_burden <- function(countryCode = NULL, provideProgress=FALSE,
+                             customPPEPdata = NULL) {
   print(paste("burden_model: countryCode = ", countryCode))
   if (provideProgress) {
     incProgress(amount = 0.1, detail = "loading data...")
@@ -78,20 +88,23 @@ calculate_burden <- function(countryCode = NULL, provideProgress=FALSE) {
   RRP <- rrp[1]
   RRPl <- rrp[2]; RRPu <- rrp[3]
   
-  pop <- read.csv("CountriesPop.csv")  # http://esa.un.org/wpp (country-specific mortality rates, % urban etc)
-  # DALYs - disability weightings and lifetables
-  DALYrabies <- read.csv("DALY_params_rabies.csv")  # Probability of rabies death at each age class
-  DALYvacc <- read.csv("DALY_params_vaccination.csv")
-  GBD2010 <- read.csv("GBD2010_LE.csv")  # GBD 2010 study - LE of 86 years at birth (based on highest observed LE per age group)
-  west26 <- read.csv("West26.csv")  # Standard West 26 lifetable # Coale-Demeny Model Life Tables West (26) - Life Expectancy at Birth = 80∙0 for males & 82∙5 for females
-  
-  d<-read.csv("pPEPcountry.csv")
-  print("burden_model: read all tables")
-  
-  # Rather hackily, reduce the amount of work we need to do to one country.
-  if (!is.null(countryCode)) {
-    d<-d[d$CODE == countryCode,]
-    pop<-pop[pop$CODE == countryCode,]
+  if (is.null(customPPEPdata)) {
+    print("Using default PPEP data")
+    d<-read.csv("pPEPcountry.csv")
+    # Rather hackily, reduce the amount of work we need to do to one country.
+    if (!is.null(countryCode)) {
+      d<-d[d$CODE == countryCode,]
+      pop<-pop[pop$CODE == countryCode,]
+    }
+  } else {
+    print("Using custom PPEP data")
+    d <- customPPEPdata
+    if (!is.null(countryCode)) {
+      pop<-pop[pop$CODE == countryCode,]
+    }
+    print(d)
+    print("")
+    print(pop)
   }
   
   if (provideProgress) {
@@ -100,7 +113,8 @@ calculate_burden <- function(countryCode = NULL, provideProgress=FALSE) {
   
   ########################################################################
   # DEATHS, EXPOSURES & PEP ADMINISTRATION - basis for sensitivity analyses
-  d$deaths <- with(d, RISK * pop * BI * mRP * (1-PP) * DP); sum(d$deaths, na.rm=T) 
+  d$deaths <- with(d, RISK * pop * BI * mRP * (1-PP) * DP)
+  sum(d$deaths, na.rm=T) 
   d$DR = d$deaths/d$Human_population_2010
   d$exp <- with(d, RISK * pop * BI * mRP)  # Genuine Exposures - i.e. to rabid (not healthy) animals
   d$PEP <- with(d, RISK * pop * BI * PP)  # PEP  - all bites, does not distinguish rabid vs healthy animals
@@ -178,6 +192,7 @@ calculate_burden <- function(countryCode = NULL, provideProgress=FALSE) {
   # write.csv(d, "burden.csv", row.names=FALSE)
   
   # Remove the columns that are duplicated from pPEP
+  pPEPcountry <- read.csv("pPEPcountry.csv", row.names = 2)
   burden <- d[, !(colnames(d) %in% colnames(pPEPcountry))]
   print(burden)
   

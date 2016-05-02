@@ -11,10 +11,13 @@ library(shiny)
 library(rhandsontable)
 
 print("ShinyServer: Server start up")
-country_data = read.csv("vcountry2.csv", row.names = 2)
+country_data <- read.csv("vcountry2.csv", row.names = 2)
 # This data is calculated by burden_1.R - we will assume this a given for
 # now.
-pPEPcountry = read.csv("pPEPcountry.csv", row.names = 2)
+pPEPcountry <- read.csv("pPEPcountry.csv", row.names = 2)
+# Strip non-numeric data from pPEPcountry as it buggers up the editable table types.
+# Actually - don't do this just yet - we'll show the data horizontally for now pPEPcountry <- pPEPcountry[,!(colnames(pPEPcountry) %in% c("NUM","Country","Cluster","Continent","Code","CODE_GDP", "WHO"))]
+
 print("ShinyServer: sourcing burden model")
 source('burden_model.R')
 print("ShinyServer: Burden model sourced")
@@ -39,36 +42,26 @@ shinyServer(function(input, output) {
   output$population<-renderText({
     as.character(country_data[input$countryChoice, "Human_population_2010"])})
   
-  output$pPEP_table<-renderTable({t(row_slice_or_empty(pPEPcountry, input$countryChoice))})
+  output$pPEP_table<-renderTable({row_slice_or_empty(pPEPcountry, input$countryChoice)})
   
   ## Editable table stuff
-  values = reactiveValues()
-  
-  data = eventReactive(input$countryChoice, {
+  pPepData = reactive({
     if (!is.null(input$pPEP_table_editable)) {
-      print("Getting data from UI")
+      print("ShinyServer: Getting pPEPdata from UI")
       DF = hot_to_r(input$pPEP_table_editable)
+      print(DF)
     } else {
-      print("Populating data from server...")
-     # if (is.null(values[["DF"]])) {
-        print("...dataframe")
-        print(input$countryChoice)
-        DF = t(row_slice_or_empty(pPEPcountry, input$countryChoice))
-     # } else {
-     #   print("...cache")
-     #   DF = values[["DF"]]
-     # }
+      print("ShinyServer: Populating pPEP data from server...")
+      print("...dataframe")
+      print(input$countryChoice)
+      DF = row_slice_or_empty(pPEPcountry, input$countryChoice)
     }
-    
-    
-    values[["DF"]] = DF
-    #print(DF)
     DF
   })
   
   output$pPEP_table_editable <- renderRHandsontable({
     input$countryChoice #Force a reaction
-    DF = data()
+    DF = pPepData()
     if (!is.null(DF)) {
       rhandsontable(DF, useTypes = TRUE, stretchH = "all")
     }
@@ -78,8 +71,9 @@ shinyServer(function(input, output) {
   # Running the rabies model is expensive - we don't want to redo it automatically
   # on every input change.  Instead only run it when the button is pressed.
   doCalculation <- eventReactive(input$start,{
-    print("ShinyServer: Sourcing burden_model")
-    return(calculate_burden(countryCode = input$countryChoice, provideProgress = TRUE))
+    print("ShinyServer: running burden_model")
+    return(calculate_burden(countryCode = input$countryChoice, provideProgress = TRUE,
+                            customPPEPdata = pPepData()))
   })
   
   output$burden_table <- renderTable(withProgress(message = "Calculating", detail = "Please wait...", {
