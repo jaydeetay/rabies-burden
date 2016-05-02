@@ -8,6 +8,7 @@
 #
 
 library(shiny)
+library(rhandsontable)
 
 print("ShinyServer: Server start up")
 country_data = read.csv("vcountry2.csv", row.names = 2)
@@ -17,13 +18,16 @@ pPEPcountry = read.csv("pPEPcountry.csv", row.names = 2)
 print("ShinyServer: sourcing burden model")
 source('burden_model.R')
 print("ShinyServer: Burden model sourced")
+source('helper.R')
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
   print("ShinyServer: New User")
-  output$countrySelector<-renderUI({selectInput("countryChoice", "Country", rownames(country_data))})
+  output$countrySelector<-renderUI({
+    print("ShinyServer: Populating country selector")
+    selectInput("countryChoice", "Country", rownames(country_data))})
   output$country<-renderText({
-    print("ShinyServer: Country changed")
+    print(paste("ShinyServer: Country changed to ", input$countryChoice))
     as.character(country_data[input$countryChoice, "Country"])})
   
   output$continent<-renderText({
@@ -35,8 +39,41 @@ shinyServer(function(input, output) {
   output$population<-renderText({
     as.character(country_data[input$countryChoice, "Human_population_2010"])})
   
-  output$pPEP_table<-renderTable({t(pPEPcountry[input$countryChoice,])})
+  output$pPEP_table<-renderTable({t(row_slice_or_empty(pPEPcountry, input$countryChoice))})
   
+  ## Editable table stuff
+  values = reactiveValues()
+  
+  data = eventReactive(input$countryChoice, {
+    if (!is.null(input$pPEP_table_editable)) {
+      print("Getting data from UI")
+      DF = hot_to_r(input$pPEP_table_editable)
+    } else {
+      print("Populating data from server...")
+     # if (is.null(values[["DF"]])) {
+        print("...dataframe")
+        print(input$countryChoice)
+        DF = t(row_slice_or_empty(pPEPcountry, input$countryChoice))
+     # } else {
+     #   print("...cache")
+     #   DF = values[["DF"]]
+     # }
+    }
+    
+    
+    values[["DF"]] = DF
+    #print(DF)
+    DF
+  })
+  
+  output$pPEP_table_editable <- renderRHandsontable({
+    input$countryChoice #Force a reaction
+    DF = data()
+    if (!is.null(DF)) {
+      rhandsontable(DF, useTypes = TRUE, stretchH = "all")
+    }
+  })
+  # End editable table stuff
 
   # Running the rabies model is expensive - we don't want to redo it automatically
   # on every input change.  Instead only run it when the button is pressed.
@@ -46,7 +83,7 @@ shinyServer(function(input, output) {
   })
   
   output$burden_table <- renderTable(withProgress(message = "Calculating", detail = "Please wait...", {
-    print("ShinyServer: Do calculation")
+    print("ShinyServer: Maybe calculation")
     doCalculation()
   }))
   

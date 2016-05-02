@@ -175,20 +175,15 @@ calculate_burden <- function(countryCode = NULL, provideProgress=FALSE) {
   country_costs = apply(costs, 1, sum, na.rm=TRUE) # by country
   total_costs = sum(country_costs)
   
-  print("costs")
-  print(costs)
-  print("cat_costs")
-  print(cat_costs)
-  print("country_costs")
-  print(country_costs)
-  print("total_costs")
-  print(total_costs)
-  
   # write.csv(d, "burden.csv", row.names=FALSE)
+  
+  # Remove the columns that are duplicated from pPEP
+  burden <- d[, !(colnames(d) %in% colnames(pPEPcountry))]
+  print(burden)
   
   if (provideProgress) {
     setProgress(value = 1, detail = "done")
   }
   print("burden_model: complete")
-  return(d)
+  return(burden)
 }
