@@ -9,6 +9,7 @@
 
 library(shiny)
 library(rhandsontable)
+if (!require("DT")) install.packages('DT')
 
 print("ShinyServer: Server start up")
 country_data <- read.csv("vcountry2.csv", row.names = 2)
@@ -20,6 +21,9 @@ print("ShinyServer: sourcing burden model")
 source('burden_model.R')
 print("ShinyServer: Burden model sourced")
 source('helper.R')
+
+input_column_whitelist = c("Country", "Cov", "HDI", "pop")
+output_column_whitelist = c("deaths", "PEP")
 
 shinyServer(function(input, output) {
   print("ShinyServer: New User")
@@ -43,7 +47,12 @@ shinyServer(function(input, output) {
   output$population<-renderText({
     as.character(country_data[input$countryChoice, "Human_population_2010"])})
   
-  output$pPEP_table<-renderTable({row_slice_or_empty(pPEPcountry, input$countryChoice)})
+  output$pPEP_table<-DT::renderDataTable(
+    {row_slice_or_empty(pPEPcountry, input$countryChoice)}[input_column_whitelist],
+     options = list(
+       searching = FALSE,
+       paging=FALSE,
+       info=FALSE))
   
   ## Editable table stuff
   pPep = reactiveValues(data = NULL)
@@ -55,7 +64,9 @@ shinyServer(function(input, output) {
   
   observeEvent(input$pPEP_table_editable, {
     print("ShinyServer: setting user edited pPep data")
-    pPep$data <- hot_to_r(input$pPEP_table_editable)
+    new_data <- hot_to_r(input$pPEP_table_editable)
+    updated <- merge_data(pPep$data, new_data, "Country")
+    pPep$data <- updated
   })
   
   
@@ -63,7 +74,9 @@ shinyServer(function(input, output) {
     input$countryChoice # Force a reaction
     DF = row_slice_or_empty(pPEPcountry, input$countryChoice) # Resets any user values
     if (!is.null(DF)) {
-      rhandsontable(DF, useTypes = TRUE, stretchH = "all")
+      rhandsontable(DF[input_column_whitelist], useTypes = TRUE, stretchH = "all") %>%
+        hot_cols(format = "0.0") %>%  # Default col format
+        hot_col("HDI", format = "0.0000")  # Overridden per column
     }
   })
   # End editable table stuff
@@ -88,10 +101,16 @@ shinyServer(function(input, output) {
     resultData$data <- NULL
   })
   
-  output$burden_table <- renderTable(withProgress(message = "Calculating", detail = "Please wait...", {
-    print("ShinyServer: Maybe calculation")
-    resultData$data
-  }))
+  output$burden_table <- DT::renderDataTable(
+    withProgress(message = "Calculating", detail = "Please wait...", {
+      print("ShinyServer: Maybe calculation")
+      resultData$data[output_column_whitelist]
+    }),
+    caption = "Output",
+    options = list(
+      searching=FALSE,
+      paging=FALSE,
+      info=FALSE))
   
   print("ShinyServer: End server call")
 })
