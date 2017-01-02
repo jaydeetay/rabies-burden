@@ -25,6 +25,7 @@ source('helper.R')
 
 shinyServer(function(input, output) {
   print("ShinyServer: New User")
+  
   output$countrySelector<-renderUI({
     print("ShinyServer: Populating country selector")
     selectInput("countryChoice", "Country", rownames(country_data))})
@@ -44,40 +45,51 @@ shinyServer(function(input, output) {
   output$pPEP_table<-renderTable({row_slice_or_empty(pPEPcountry, input$countryChoice)})
   
   ## Editable table stuff
-  pPepData = reactive({
-    if (!is.null(input$pPEP_table_editable)) {
-      print("ShinyServer: Getting pPEPdata from UI")
-      DF = hot_to_r(input$pPEP_table_editable)
-      print(DF)
-    } else {
-      print("ShinyServer: Populating pPEP data from server...")
-      print("...dataframe")
-      print(input$countryChoice)
-      DF = row_slice_or_empty(pPEPcountry, input$countryChoice)
-    }
-    DF
+  pPep = reactiveValues(data = NULL)
+  
+  observeEvent(input$countryChoice, {
+    print("ShinyServer: resetting pPep data from server")
+    pPep$data <- row_slice_or_empty(pPEPcountry, input$countryChoice)
   })
   
+  observeEvent(input$pPEP_table_editable, {
+    print("ShinyServer: setting user edited pPep data")
+    pPep$data <- hot_to_r(input$pPEP_table_editable)
+  })
+  
+  
   output$pPEP_table_editable <- renderRHandsontable({
-    input$countryChoice #Force a reaction
-    DF = pPepData()
+    input$countryChoice # Force a reaction
+    DF = row_slice_or_empty(pPEPcountry, input$countryChoice) # Resets any user values
     if (!is.null(DF)) {
       rhandsontable(DF, useTypes = TRUE, stretchH = "all")
     }
   })
   # End editable table stuff
-
+  
+  resultData <- reactiveValues(data = NULL)
+  
   # Running the rabies model is expensive - we don't want to redo it automatically
   # on every input change.  Instead only run it when the button is pressed.
-  doCalculation <- eventReactive(input$start,{
-    print("ShinyServer: running burden_model")
-    return(calculate_burden(countryCode = input$countryChoice, provideProgress = TRUE,
-                            customPPEPdata = pPepData()))
+  observeEvent(input$start, {
+    print("ShinyServer: running the burden model")
+    resultData$data <- calculate_burden(countryCode = input$countryChoice, provideProgress = TRUE,
+                                        customPPEPdata = pPep$data)
+  })
+  
+  observeEvent(input$countryChoice, {
+    print("ShinyServer: resetting the output due to changed country")
+    resultData$data <- NULL
+  })
+  
+  observeEvent(input$pPEP_table_editable, {
+    print("ShinyServer: resetting the output due to change params")
+    resultData$data <- NULL
   })
   
   output$burden_table <- renderTable(withProgress(message = "Calculating", detail = "Please wait...", {
     print("ShinyServer: Maybe calculation")
-    doCalculation()
+    resultData$data
   }))
   
   print("ShinyServer: End server call")

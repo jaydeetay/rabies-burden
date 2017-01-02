@@ -102,9 +102,9 @@ calculate_burden <- function(countryCode = NULL, provideProgress=FALSE,
     if (!is.null(countryCode)) {
       pop<-pop[pop$CODE == countryCode,]
     }
-    print(d)
-    print("")
-    print(pop)
+    #print(d)
+    #print("")
+    #print(pop)
   }
   
   if (provideProgress) {
