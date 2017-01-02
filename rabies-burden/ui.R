@@ -15,7 +15,6 @@ shinyUI(fluidPage(
   verticalLayout(
     titlePanel("Burden of Rabies"),
     
-    # Sidebar with a slider input for number of bins 
     sidebarLayout(
       sidebarPanel(
          h1("Select:"),

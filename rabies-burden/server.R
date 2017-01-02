@@ -23,7 +23,6 @@ source('burden_model.R')
 print("ShinyServer: Burden model sourced")
 source('helper.R')
 
-# Define server logic required to draw a histogram
 shinyServer(function(input, output) {
   print("ShinyServer: New User")
   output$countrySelector<-renderUI({
