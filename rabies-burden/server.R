@@ -15,8 +15,6 @@ country_data <- read.csv("vcountry2.csv", row.names = 2)
 # This data is calculated by burden_1.R - we will assume this a given for
 # now.
 pPEPcountry <- read.csv("pPEPcountry.csv", row.names = 2)
-# Strip non-numeric data from pPEPcountry as it buggers up the editable table types.
-# Actually - don't do this just yet - we'll show the data horizontally for now pPEPcountry <- pPEPcountry[,!(colnames(pPEPcountry) %in% c("NUM","Country","Cluster","Continent","Code","CODE_GDP", "WHO"))]
 
 print("ShinyServer: sourcing burden model")
 source('burden_model.R')
@@ -28,7 +26,10 @@ shinyServer(function(input, output) {
   
   output$countrySelector<-renderUI({
     print("ShinyServer: Populating country selector")
-    selectInput("countryChoice", "Country", rownames(country_data))})
+    selectInput("countryChoice",
+                "Country",
+                setNames(rownames(country_data), country_data[["Country"]]))})
+
   output$country<-renderText({
     print(paste("ShinyServer: Country changed to ", input$countryChoice))
     as.character(country_data[input$countryChoice, "Country"])})
