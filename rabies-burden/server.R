@@ -10,6 +10,7 @@
 library(shiny)
 library(rhandsontable)
 if (!require("DT")) install.packages('DT')
+library("DT")
 
 print("ShinyServer: Server start up")
 country_data <- read.csv("vcountry2.csv", row.names = 2)
@@ -22,8 +23,8 @@ source('burden_model.R')
 print("ShinyServer: Burden model sourced")
 source('helper.R')
 
-input_column_whitelist = c("Country", "Cov", "HDI", "pop")
-output_column_whitelist = c("deaths", "PEP")
+input_column_whitelist = c("Country", "HDI","Human_population_2010", "BI", "BI_L", "BI_U", "Coverage", "Cov_L", "Cov_U", "mRP", "lRP", "uRP", "PP", "PPl","PPu")
+output_column_whitelist = c("deaths", "exp", "PEP", "prev_death", "YLL")
 
 shinyServer(function(input, output) {
   print("ShinyServer: New User")
@@ -46,6 +47,9 @@ shinyServer(function(input, output) {
   
   output$population<-renderText({
     as.character(country_data[input$countryChoice, "Human_population_2010"])})
+  
+  output$HDI<-renderText({
+    as.character(pPEPcountry[input$countryChoice, "HDI"])})
   
   output$pPEP_table<-DT::renderDataTable(
     {row_slice_or_empty(pPEPcountry, input$countryChoice)}[input_column_whitelist],
